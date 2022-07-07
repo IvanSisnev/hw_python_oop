@@ -123,9 +123,9 @@ class Running(Training):
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        calories = ((self.RUNNING_COEFFICIENT_1 * self.get_mean_speed() -
-                     self.RUNNING_COEFFICIENT_2) * self.weight /
-                    self.M_IN_KM * self.duration * 60)
+        calories = ((self.RUNNING_COEFFICIENT_1 * self.get_mean_speed()
+                     - self.RUNNING_COEFFICIENT_2) * self.weight
+                    / self.M_IN_KM * self.duration * 60)
         return calories
 
     def __str__(self) -> str:
@@ -158,9 +158,9 @@ class SportsWalking(Training):
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        calories = ((self.WALKING_COEFFICIENT_1 * self.weight +
-                     (self.get_mean_speed() ** 2 // self.height) *
-                     self.WALKING_COEFFICIENT_2 * self.weight)
+        calories = ((self.WALKING_COEFFICIENT_1 * self.weight
+                     + (self.get_mean_speed() ** 2 // self.height)
+                     * self.WALKING_COEFFICIENT_2 * self.weight)
                     * self.duration * 60)
 
         return calories
