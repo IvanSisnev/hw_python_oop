@@ -9,7 +9,7 @@
 
 # Импорт для аннотации типов при создании словаря типов тренировки и
 # списка с данными тренировок
-from typing import Dict, Type, List, Tuple
+from typing import Dict, Type, List, Tuple, ClassVar
 
 
 class InfoMessage:
@@ -38,11 +38,10 @@ class InfoMessage:
         Создать и вернуть строку с информационным сообщением о
         тренировке.
         """
-        message = (f'Тип тренировки: {self.training_type}; Длительность:'
-                   f' {self.duration} ч.; Дистанция: {self.distance} км; Ср.'
-                   f' скорость: {self.speed} км/ч; '
-                   f'Потрачено ккал: {self.calories}.')
-        return message
+        return (f'Тип тренировки: {self.training_type}; Длительность:'
+                f' {self.duration} ч.; Дистанция: {self.distance} км; Ср.'
+                f' скорость: {self.speed} км/ч; '
+                f'Потрачено ккал: {self.calories}.')
 
 
 class Training:
@@ -52,9 +51,14 @@ class Training:
     """
 
     # Длина шага в метрах
-    LEN_STEP: float = 0.65
+    LEN_STEP: ClassVar[float] = 0.65
     # Константа для перевода из метров в километры
-    M_IN_KM: int = 1000
+    M_IN_KM: ClassVar[int] = 1000
+    # Константа для перевода часов в минуты
+    MINUTES_PER_HOUR: ClassVar[int] = 60
+    # Коэффициенты для расчета потраченных калорий
+    CALORIES_COEFFICIENT_1: ClassVar[int] = 2
+    CALORIES_COEFFICIENT_2: ClassVar[float] = 1.1
 
     def __init__(self,
                  action: int,
@@ -72,35 +76,32 @@ class Training:
         """
         Получить пройденную дистанцию в км.
         """
-        distance = self.action * self.LEN_STEP / self.M_IN_KM
-        return distance
+        return self.action * Training.LEN_STEP / Training.M_IN_KM
 
     def get_mean_speed(self) -> float:
         """
         Получить и вернуть среднюю скорость движения.
         """
-        speed = self.get_distance() / self.duration
-        return speed
+        return self.get_distance() / self.duration
 
     def get_spent_calories(self) -> float:
         """
         Получить количество затраченных калорий. Метод переопределяется
         в дочерних классах.
         """
-        pass
+        raise NotImplementedError
 
     def show_training_info(self) -> InfoMessage:
         """
         Создать и вернуть информационное сообщение о выполненной
         тренировке.
         """
-        result = InfoMessage(self.__str__(),
-                             self.duration,
-                             self.get_distance(),
-                             self.get_mean_speed(),
-                             self.get_spent_calories(),
-                             )
-        return result
+        return InfoMessage(type(self).__name__,
+                           self.duration,
+                           self.get_distance(),
+                           self.get_mean_speed(),
+                           self.get_spent_calories(),
+                           )
 
 
 class Running(Training):
@@ -109,30 +110,16 @@ class Running(Training):
     """
 
     # Коэффициенты для подсчета потраченных калорий в беге
-    RUNNING_COEFFICIENT_1: int = 18
-    RUNNING_COEFFICIENT_2: int = 20
-
-    def __init__(self,
-                 action: int,
-                 duration: float,
-                 weight: float,
-                 ) -> None:
-        super().__init__(action, duration, weight)
+    RUNNING_COEFFICIENT_1: ClassVar[int] = 18
+    RUNNING_COEFFICIENT_2: ClassVar[int] = 20
 
     def get_spent_calories(self) -> float:
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        calories = ((self.RUNNING_COEFFICIENT_1 * self.get_mean_speed()
-                     - self.RUNNING_COEFFICIENT_2) * self.weight
-                    / self.M_IN_KM * self.duration * 60)
-        return calories
-
-    def __str__(self) -> str:
-        """
-        Метод представления объекта класса в виде строки.
-        """
-        return 'Running'
+        return ((Running.RUNNING_COEFFICIENT_1 * self.get_mean_speed()
+                 - Running.RUNNING_COEFFICIENT_2) * self.weight
+                / Running.M_IN_KM * self.duration * Running.MINUTES_PER_HOUR)
 
 
 class SportsWalking(Training):
@@ -141,8 +128,8 @@ class SportsWalking(Training):
     """
 
     # Коэффициенты для подсчета потраченных калорий в спортивной ходьбе
-    WALKING_COEFFICIENT_1: float = 0.035
-    WALKING_COEFFICIENT_2: float = 0.029
+    WALKING_COEFFICIENT_1: ClassVar[float] = 0.035
+    WALKING_COEFFICIENT_2: ClassVar[float] = 0.029
 
     def __init__(self,
                  action: int,
@@ -158,18 +145,12 @@ class SportsWalking(Training):
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        calories = ((self.WALKING_COEFFICIENT_1 * self.weight
-                     + (self.get_mean_speed() ** 2 // self.height)
-                     * self.WALKING_COEFFICIENT_2 * self.weight)
-                    * self.duration * 60)
-
-        return calories
-
-    def __str__(self) -> str:
-        """
-        Метод представления объекта класса в виде строки.
-        """
-        return 'SportsWalking'
+        return ((SportsWalking.WALKING_COEFFICIENT_1 * self.weight
+                 + (self.get_mean_speed()
+                 ** SportsWalking.CALORIES_COEFFICIENT_1
+                 // self.height) * SportsWalking.WALKING_COEFFICIENT_2
+                 * self.weight) * self.duration
+                 * SportsWalking.MINUTES_PER_HOUR)
 
 
 class Swimming(Training):
@@ -198,24 +179,15 @@ class Swimming(Training):
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        calories = (self.get_mean_speed() + 1.1) * 2 * self.weight
-
-        return calories
+        return ((self.get_mean_speed() + Swimming.CALORIES_COEFFICIENT_2)
+               * Swimming.CALORIES_COEFFICIENT_1 * self.weight)
 
     def get_mean_speed(self) -> float:
         """
         Получить и вернуть среднюю скорость движения.
         """
-        speed = (self.length_pool * self.count_pool / self.M_IN_KM
-                 / self.duration)
-
-        return speed
-
-    def __str__(self) -> str:
-        """
-        Метод представления объекта класса в виде строки.
-        """
-        return 'Swimming'
+        return (self.length_pool * self.count_pool / Swimming.M_IN_KM
+                / self.duration)
 
 
 def read_package(workout_category: str, workout_data: List) -> Training:
@@ -234,9 +206,9 @@ def read_package(workout_category: str, workout_data: List) -> Training:
     }
 
     # Сообщения об ошибках данных
-    invalid_key_message = 'Невозможно определить вид тренировки.'
-    corrupt_data_message = 'Некорректные данные тренировки.'
-    incomplete_data_message = 'Данные тренировки неполные.'
+    invalid_key_message: str = 'Невозможно определить вид тренировки.'
+    corrupt_data_message: str = 'Некорректные данные тренировки.'
+    incomplete_data_message: str = 'Данные тренировки неполные.'
 
     # Присвоить переменной соответствующий класс из словаря
     try:
