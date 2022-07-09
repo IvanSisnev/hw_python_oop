@@ -30,25 +30,17 @@ class InfoMessage:
     # Потраченные калории
     calories: float
 
-    @classmethod
-    def formatted(cls, num: float) -> str:
-        """
-        Преобразовать число в строку с тремя знаками после запятой и
-        вернуть ее.
-        """
-        return f'{num:.3f}'
-
     def get_message(self) -> str:
         """
         Создать и вернуть строку с информационным сообщением о
         тренировке.
         """
         return (f'Тип тренировки: {self.training_type}; Длительность:'
-                f' {InfoMessage.formatted(self.duration)} ч.; '
-                f'Дистанция: {InfoMessage.formatted(self.distance)} '
-                f'км; Ср. скорость: {InfoMessage.formatted(self.speed)} '
+                f' {self.duration:.3f} ч.; '
+                f'Дистанция: {self.distance:.3f} '
+                f'км; Ср. скорость: {self.speed:.3f} '
                 f'км/ч; Потрачено ккал: '
-                f'{InfoMessage.formatted(self.calories)}.')
+                f'{self.calories:.3f}.')
 
 
 @dataclass
@@ -79,7 +71,7 @@ class Training:
         """
         Получить пройденную дистанцию в км.
         """
-        return self.action * self.LEN_STEP / Training.M_IN_KM
+        return self.action * self.LEN_STEP / self.M_IN_KM
 
     def get_mean_speed(self) -> float:
         """
@@ -121,9 +113,9 @@ class Running(Training):
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        return ((Running.RUNNING_COEFFICIENT_1 * self.get_mean_speed()
-                 - Running.RUNNING_COEFFICIENT_2) * self.weight
-                / Running.M_IN_KM * self.duration * Running.MINUTES_PER_HOUR)
+        return ((self.RUNNING_COEFFICIENT_1 * self.get_mean_speed()
+                 - self.RUNNING_COEFFICIENT_2) * self.weight
+                / self.M_IN_KM * self.duration * self.MINUTES_PER_HOUR)
 
 
 @dataclass
@@ -143,12 +135,12 @@ class SportsWalking(Training):
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        return ((SportsWalking.WALKING_COEFFICIENT_1 * self.weight
+        return ((self.WALKING_COEFFICIENT_1 * self.weight
                  + (self.get_mean_speed()
-                    ** SportsWalking.CALORIES_COEFFICIENT_1
-                    // self.height) * SportsWalking.WALKING_COEFFICIENT_2
+                    ** self.CALORIES_COEFFICIENT_1
+                    // self.height) * self.WALKING_COEFFICIENT_2
                  * self.weight) * self.duration
-                * SportsWalking.MINUTES_PER_HOUR)
+                * self.MINUTES_PER_HOUR)
 
 
 @dataclass
@@ -169,14 +161,14 @@ class Swimming(Training):
         """
         Вычислить и вернуть количество потраченных калорий.
         """
-        return ((self.get_mean_speed() + Swimming.CALORIES_COEFFICIENT_2)
-                * Swimming.CALORIES_COEFFICIENT_1 * self.weight)
+        return ((self.get_mean_speed() + self.CALORIES_COEFFICIENT_2)
+                * self.CALORIES_COEFFICIENT_1 * self.weight)
 
     def get_mean_speed(self) -> float:
         """
         Получить и вернуть среднюю скорость движения.
         """
-        return (self.length_pool * self.count_pool / Swimming.M_IN_KM
+        return (self.length_pool * self.count_pool / self.M_IN_KM
                 / self.duration)
 
 
@@ -218,10 +210,9 @@ def read_package(workout_category: str, workout_data: List) -> Training:
             print(incomplete_data_message)
             raise SystemExit
         return object_training
-    # Вывести сообщение о некорректных данных тренировки
-    else:
-        print(corrupt_data_message)
-        raise SystemExit
+    # В случае ошибки вывести сообщение о некорректных данных тренировки
+    print(corrupt_data_message)
+    raise SystemExit
 
 
 def main(training_class_object: Training) -> None:
